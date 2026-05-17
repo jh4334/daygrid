@@ -2,7 +2,7 @@ import { memo, useContext } from 'react'
 import { minuteToPixel, formatMinute } from '../../utils/time'
 import { useEventResize } from '../../hooks/useEventResize'
 import type { CalendarEvent, Category } from '../../types'
-import { ScrollContainerContext } from './TimelineView'
+import { ScrollContainerContext } from './scrollContext'
 
 interface Props {
   event: CalendarEvent
