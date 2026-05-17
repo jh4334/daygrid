@@ -1,108 +1,87 @@
+import { useState } from 'react'
 import { useGoogleLogin, googleLogout } from '@react-oauth/google'
 import { useAppStore } from '../../store/useAppStore'
-import { fetchGoogleEvents } from '../../services/googleCalendar'
-import { addDays, todayIso } from '../../utils/dateUtils'
-import { useState } from 'react'
 
 export function GoogleCalendarSection() {
   const token = useAppStore((s) => s.googleAccessToken)
   const lastSyncedAt = useAppStore((s) => s.lastSyncedAt)
   const setGoogleAccessToken = useAppStore((s) => s.setGoogleAccessToken)
   const setLastSyncedAt = useAppStore((s) => s.setLastSyncedAt)
-  const importGoogleEvents = useAppStore((s) => s.importGoogleEvents)
-  const [syncing, setSyncing] = useState(false)
+  const clearGoogleEvents = useAppStore((s) => s.clearGoogleEvents)
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const login = useGoogleLogin({
     scope: 'https://www.googleapis.com/auth/calendar.readonly',
-    onSuccess: async (res) => {
-      setGoogleAccessToken(res.access_token)
+    onSuccess: (res) => {
       setError(null)
-      await sync(res.access_token)
+      setLoading(false)
+      // 토큰을 저장하면 useGoogleAutoSync가 자동으로 동기화 실행
+      setGoogleAccessToken(res.access_token)
     },
-    onError: () => setError('구글 로그인에 실패했습니다.'),
+    onError: () => {
+      setLoading(false)
+      setError('구글 로그인에 실패했습니다.')
+    },
   })
-
-  const sync = async (accessToken = token) => {
-    if (!accessToken) return
-    setSyncing(true)
-    setError(null)
-    try {
-      const today = todayIso()
-      const dateMin = addDays(today, -7)
-      const dateMax = addDays(today, 7)
-      const events = await fetchGoogleEvents(accessToken, dateMin, dateMax)
-      importGoogleEvents(events)
-      setLastSyncedAt(new Date().toLocaleTimeString('ko-KR'))
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '동기화 실패'
-      if (msg.includes('401')) {
-        setGoogleAccessToken(null)
-        setError('토큰이 만료되었습니다. 다시 연결해주세요.')
-      } else {
-        setError(msg)
-      }
-    } finally {
-      setSyncing(false)
-    }
-  }
 
   const disconnect = () => {
     googleLogout()
     setGoogleAccessToken(null)
     setLastSyncedAt(null)
+    // 연결된 구글 이벤트도 제거
+    const { events } = useAppStore.getState()
+    const googleDates = [...new Set(events.filter((e) => e.isGoogleEvent).map((e) => e.date))]
+    googleDates.forEach(clearGoogleEvents)
   }
 
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
   if (!clientId) {
     return (
-      <div className="py-2">
-        <p className="text-xs text-gray-400">
-          구글 캘린더 연동을 위해 <code>.env.local</code>에 <br />
-          <code>VITE_GOOGLE_CLIENT_ID=</code>를 설정하세요.
-        </p>
+      <p className="text-xs text-gray-400 leading-relaxed">
+        Google Calendar 연동을 위해<br />
+        <code className="bg-gray-100 px-1 rounded">VITE_GOOGLE_CLIENT_ID</code>를 설정하세요.
+      </p>
+    )
+  }
+
+  if (!token) {
+    return (
+      <div className="space-y-2">
+        <button
+          onClick={() => { setLoading(true); login() }}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2.5 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 active:bg-gray-50 disabled:opacity-60 transition-colors"
+        >
+          <GoogleIcon />
+          {loading ? '연결 중...' : 'Google 계정으로 연결'}
+        </button>
+        {error && <p className="text-xs text-red-500 text-center">{error}</p>}
       </div>
     )
   }
 
   return (
     <div className="space-y-2">
-      {!token ? (
-        <button
-          onClick={() => login()}
-          className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 active:bg-gray-50"
-        >
-          <GoogleIcon />
-          Google 계정으로 연결
-        </button>
-      ) : (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-400" />
-            <span className="text-xs text-gray-500">연결됨</span>
-            {lastSyncedAt && (
-              <span className="text-xs text-gray-400 ml-auto">마지막 동기화 {lastSyncedAt}</span>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => sync()}
-              disabled={syncing}
-              className="flex-1 py-2 rounded-xl text-sm font-medium text-blue-600 bg-blue-50 active:bg-blue-100 disabled:opacity-50"
-            >
-              {syncing ? '동기화 중...' : '동기화'}
-            </button>
-            <button
-              onClick={disconnect}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 bg-gray-100 active:bg-gray-200"
-            >
-              연결 해제
-            </button>
-          </div>
+      {/* 연결 상태 표시 */}
+      <div className="flex items-center gap-2 py-2 px-3 bg-green-50 rounded-xl">
+        <div className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-green-700">Google Calendar 연결됨</p>
+          {lastSyncedAt && (
+            <p className="text-[10px] text-green-600/70 mt-0.5">마지막 동기화 {lastSyncedAt}</p>
+          )}
         </div>
-      )}
-      {error && <p className="text-xs text-red-500">{error}</p>}
+        <GoogleIcon />
+      </div>
+
+      <button
+        onClick={disconnect}
+        className="w-full py-2 rounded-xl text-xs font-semibold text-gray-400 active:bg-gray-50 transition-colors"
+      >
+        연결 해제
+      </button>
     </div>
   )
 }
