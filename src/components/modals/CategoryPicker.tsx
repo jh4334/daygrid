@@ -7,10 +7,9 @@ interface Props {
 }
 
 export function CategoryPicker({ categories, selectedId, onSelect }: Props) {
-  const filtered = categories.filter((c) => c.id !== 'google-import')
   return (
     <div className="grid grid-cols-4 gap-2">
-      {filtered.map((cat) => {
+      {categories.map((cat) => {
         const selected = selectedId === cat.id
         return (
           <button

@@ -19,21 +19,15 @@ interface AppState {
   selectedDate: string
   view: AppView
   focusEventId: string | null
-  googleAccessToken: string | null
-  lastSyncedAt: string | null
   modal: ModalState
 
   addEvent: (draft: Omit<CalendarEvent, 'id' | 'column' | 'columnCount'>) => void
   updateEvent: (id: string, patch: Partial<CalendarEvent>) => void
   deleteEvent: (id: string) => void
-  importGoogleEvents: (events: CalendarEvent[]) => void
-  clearGoogleEvents: (date: string) => void
 
   setSelectedDate: (date: string) => void
   setView: (view: AppView) => void
   setFocusEvent: (id: string | null) => void
-  setGoogleAccessToken: (token: string | null) => void
-  setLastSyncedAt: (at: string | null) => void
 
   updateCategory: (id: string, patch: Partial<Category>) => void
   resetCategories: () => void
@@ -51,8 +45,6 @@ export const useAppStore = create<AppState>()(
       selectedDate: todayIso(),
       view: 'timeline',
       focusEventId: null,
-      googleAccessToken: null,
-      lastSyncedAt: null,
       modal: { open: false, eventId: null },
 
       addEvent: (draft) => {
@@ -79,32 +71,9 @@ export const useAppStore = create<AppState>()(
         })
       },
 
-      importGoogleEvents: (incoming) => {
-        set((state) => {
-          const dates = [...new Set(incoming.map((e) => e.date))]
-          let events = state.events.filter((e) => !e.isGoogleEvent || !dates.includes(e.date))
-          events = [...events, ...incoming]
-          for (const date of dates) {
-            events = recomputeLayoutForDate(events, date)
-          }
-          return { events }
-        })
-      },
-
-      clearGoogleEvents: (date) => {
-        set((state) => ({
-          events: recomputeLayoutForDate(
-            state.events.filter((e) => !(e.isGoogleEvent && e.date === date)),
-            date
-          ),
-        }))
-      },
-
       setSelectedDate: (date) => set({ selectedDate: date }),
       setView: (view) => set({ view }),
       setFocusEvent: (id) => set({ focusEventId: id, view: id ? 'focus' : 'timeline' }),
-      setGoogleAccessToken: (token) => set({ googleAccessToken: token }),
-      setLastSyncedAt: (at) => set({ lastSyncedAt: at }),
 
       updateCategory: (id, patch) =>
         set((state) => ({

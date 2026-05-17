@@ -35,9 +35,7 @@ export const EventBlock = memo(function EventBlock({ event, category, onClick }:
         width,
         backgroundColor: category.color,
         color: category.textColor,
-        boxShadow: event.isGoogleEvent
-          ? `inset 0 0 0 2px ${category.textColor}40`
-          : `0 1px 4px ${category.color}55`,
+        boxShadow: `0 1px 4px ${category.color}55`,
       }}
       onPointerDown={(e) => e.stopPropagation()} // prevent grid drag-create from activating
       onClick={onClick}
@@ -67,14 +65,11 @@ export const EventBlock = memo(function EventBlock({ event, category, onClick }:
               )}
             </p>
           )}
-          {event.isGoogleEvent && (
-            <span className="absolute top-1 right-1.5 text-[9px] opacity-50">G</span>
-          )}
         </div>
       )}
 
       {/* Resize handle – shown on hover */}
-      {!event.isGoogleEvent && height > 32 && (
+      {height > 32 && (
         <div
           className="absolute bottom-0 left-0 right-0 h-4 flex items-center justify-center cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity"
           onPointerDown={onResizePointerDown}

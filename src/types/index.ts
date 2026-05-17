@@ -14,7 +14,6 @@ export interface CalendarEvent {
   endMinute: number
   column: number
   columnCount: number
-  isGoogleEvent?: boolean
 }
 
 export interface DragState {

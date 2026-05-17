@@ -6,7 +6,6 @@ import { EventModal } from '../modals/EventModal'
 import { SettingsPanel } from '../settings/SettingsPanel'
 import { FocusTimer } from '../focus/FocusTimer'
 import { useAppStore } from '../../store/useAppStore'
-import { useGoogleAutoSync } from '../../hooks/useGoogleAutoSync'
 import { addDays, isToday } from '../../utils/dateUtils'
 
 export function AppShell() {
@@ -14,9 +13,6 @@ export function AppShell() {
   const selectedDate = useAppStore((s) => s.selectedDate)
   const setSelectedDate = useAppStore((s) => s.setSelectedDate)
   const view = useAppStore((s) => s.view)
-
-  // Google Calendar 자동 동기화 (로그인 시, 날짜 변경 시, 10분마다)
-  useGoogleAutoSync()
 
   // 좌우 스와이프로 날짜 이동
   const swipeStart = useRef<{ x: number; y: number } | null>(null)

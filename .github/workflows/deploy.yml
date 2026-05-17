@@ -32,7 +32,6 @@ jobs:
         env:
           VITE_BASE_PATH: /daygrid/
           VITE_PIN_HASH: ${{ secrets.VITE_PIN_HASH }}
-          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

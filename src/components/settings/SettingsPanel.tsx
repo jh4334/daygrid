@@ -1,7 +1,6 @@
 import { useAppStore } from '../../store/useAppStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { CategoryEditor } from './CategoryEditor'
-import { GoogleCalendarSection } from './GoogleCalendarSection'
 
 interface Props {
   open: boolean
@@ -37,15 +36,6 @@ export function SettingsPanel({ open, onClose }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
-          <section>
-            <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-              Google Calendar
-            </h3>
-            <GoogleCalendarSection />
-          </section>
-
-          <div className="h-px bg-gray-100" />
-
           {pinEnabled && (
             <section>
               <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">보안</h3>
@@ -63,8 +53,6 @@ export function SettingsPanel({ open, onClose }: Props) {
             </section>
           )}
 
-          <div className="h-px bg-gray-100" />
-
           <section>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
@@ -78,15 +66,13 @@ export function SettingsPanel({ open, onClose }: Props) {
               </button>
             </div>
             <div className="space-y-1">
-              {categories
-                .filter((c) => c.id !== 'google-import')
-                .map((cat) => (
-                  <CategoryEditor
-                    key={cat.id}
-                    category={cat}
-                    onUpdate={(patch) => updateCategory(cat.id, patch)}
-                  />
-                ))}
+              {categories.map((cat) => (
+                <CategoryEditor
+                  key={cat.id}
+                  category={cat}
+                  onUpdate={(patch) => updateCategory(cat.id, patch)}
+                />
+              ))}
             </div>
           </section>
         </div>
