@@ -7,22 +7,31 @@ interface Props {
 }
 
 export function CategoryPicker({ categories, selectedId, onSelect }: Props) {
+  const filtered = categories.filter((c) => c.id !== 'google-import')
   return (
-    <div className="flex flex-wrap gap-2 py-1">
-      {categories.filter((c) => c.id !== 'google-import').map((cat) => (
-        <button
-          key={cat.id}
-          onClick={() => onSelect(cat.id)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-          style={{
-            backgroundColor: selectedId === cat.id ? cat.color : `${cat.color}22`,
-            color: selectedId === cat.id ? cat.textColor : cat.color,
-            outline: selectedId === cat.id ? `2px solid ${cat.color}` : 'none',
-          }}
-        >
-          {cat.name}
-        </button>
-      ))}
+    <div className="grid grid-cols-4 gap-2">
+      {filtered.map((cat) => {
+        const selected = selectedId === cat.id
+        return (
+          <button
+            key={cat.id}
+            onClick={() => onSelect(cat.id)}
+            className="flex flex-col items-center gap-1 py-2 rounded-xl transition-all active:scale-95"
+            style={{
+              backgroundColor: selected ? `${cat.color}18` : 'transparent',
+              outline: selected ? `2px solid ${cat.color}` : '2px solid transparent',
+            }}
+          >
+            <div
+              className="w-7 h-7 rounded-full shadow-sm"
+              style={{ backgroundColor: cat.color }}
+            />
+            <span className="text-[10px] font-medium text-gray-500 leading-tight text-center px-0.5 truncate w-full">
+              {cat.name.split(' ')[0]}
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }

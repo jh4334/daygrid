@@ -8,12 +8,13 @@ export function CurrentTimeIndicator() {
 
   return (
     <div className="absolute left-0 right-0 pointer-events-none z-20" style={{ top }}>
-      <div className="flex items-center">
-        <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full -translate-y-1/2 shrink-0">
-          {formatMinute(minute)}
-        </span>
-        <div className="flex-1 h-px bg-red-500" />
+      <div className="flex items-center gap-1">
+        <div className="w-2 h-2 rounded-full bg-red-500 shrink-0 shadow-sm shadow-red-300 -translate-y-px" />
+        <div className="flex-1 h-px bg-red-400" />
       </div>
+      <span className="absolute -top-4 -left-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+        {formatMinute(minute)}
+      </span>
     </div>
   )
 }

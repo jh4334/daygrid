@@ -4,9 +4,7 @@ import { CategoryPicker } from './CategoryPicker'
 import { snapMinute } from '../../utils/time'
 
 function minuteToInputValue(m: number): string {
-  const h = Math.floor(m / 60).toString().padStart(2, '0')
-  const min = (m % 60).toString().padStart(2, '0')
-  return `${h}:${min}`
+  return `${Math.floor(m / 60).toString().padStart(2, '0')}:${(m % 60).toString().padStart(2, '0')}`
 }
 
 function inputValueToMinute(val: string): number {
@@ -25,16 +23,20 @@ export function EventModal() {
   const closeModal = useAppStore((s) => s.closeModal)
 
   const existingEvent = modal.eventId ? events.find((e) => e.id === modal.eventId) : null
-  const defaultCategoryId = categories.filter((c) => c.id !== 'google-import')[0]?.id ?? 'productive'
+  const defaultCategoryId = categories.filter((c) => c.id !== 'google-import')[4]?.id ?? 'productive'
 
   const [title, setTitle] = useState('')
   const [categoryId, setCategoryId] = useState(defaultCategoryId)
   const [startStr, setStartStr] = useState('09:00')
   const [endStr, setEndStr] = useState('10:00')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (!modal.open) return
+    if (!modal.open) {
+      setShowDeleteConfirm(false)
+      return
+    }
     if (existingEvent) {
       setTitle(existingEvent.title)
       setCategoryId(existingEvent.categoryId)
@@ -46,10 +48,10 @@ export function EventModal() {
       setStartStr(minuteToInputValue(modal.prefillStart ?? 540))
       setEndStr(minuteToInputValue(modal.prefillEnd ?? 600))
     }
-    setTimeout(() => inputRef.current?.focus(), 100)
+    setTimeout(() => inputRef.current?.focus(), 150)
   }, [modal.open, modal.eventId])
 
-  if (!modal.open) return null
+  const selectedCategory = categories.find((c) => c.id === categoryId)
 
   const handleSave = () => {
     if (!title.trim()) return
@@ -60,107 +62,136 @@ export function EventModal() {
     if (existingEvent) {
       updateEvent(existingEvent.id, { title: title.trim(), categoryId, startMinute, endMinute })
     } else {
-      addEvent({
-        title: title.trim(),
-        categoryId,
-        date: selectedDate,
-        startMinute,
-        endMinute,
-      })
+      addEvent({ title: title.trim(), categoryId, date: selectedDate, startMinute, endMinute })
     }
   }
 
   const handleDelete = () => {
+    if (!showDeleteConfirm) { setShowDeleteConfirm(true); return }
     if (existingEvent) deleteEvent(existingEvent.id)
   }
 
   const isReadOnly = existingEvent?.isGoogleEvent
+  const accentColor = selectedCategory?.color ?? '#3B82F6'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/30" onClick={closeModal} />
-      <div className="relative w-full max-w-lg bg-white rounded-t-2xl p-5 pb-safe space-y-4 shadow-xl">
-        <div className="flex items-center justify-between">
-          <h2 className="font-bold text-lg">
-            {existingEvent ? (isReadOnly ? '구글 일정' : '일정 수정') : '새 일정'}
-          </h2>
-          <button onClick={closeModal} className="text-gray-400 text-xl leading-none">✕</button>
-        </div>
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-50 bg-black/30 transition-opacity duration-200 ${modal.open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={closeModal}
+      />
 
-        <input
-          ref={inputRef}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          placeholder="일정 이름"
-          disabled={!!isReadOnly}
-          className="w-full border-b border-gray-200 pb-2 text-base outline-none disabled:text-gray-500"
+      {/* Sheet */}
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out max-w-lg mx-auto ${
+          modal.open ? 'translate-y-0' : 'translate-y-full'
+        }`}
+      >
+        {/* Color accent bar */}
+        <div
+          className="h-1 w-16 rounded-full mx-auto mt-3 mb-1 transition-colors duration-200"
+          style={{ backgroundColor: accentColor }}
         />
 
-        <div className="flex gap-3 items-center">
-          <div className="flex-1">
-            <label className="text-xs text-gray-400 mb-1 block">시작</label>
-            <input
-              type="time"
-              value={startStr}
-              onChange={(e) => setStartStr(e.target.value)}
-              disabled={!!isReadOnly}
-              className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm outline-none"
-            />
-          </div>
-          <span className="text-gray-300 mt-4">→</span>
-          <div className="flex-1">
-            <label className="text-xs text-gray-400 mb-1 block">종료</label>
-            <input
-              type="time"
-              value={endStr}
-              onChange={(e) => setEndStr(e.target.value)}
-              disabled={!!isReadOnly}
-              className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm outline-none"
-            />
-          </div>
-        </div>
-
-        {!isReadOnly && (
-          <div>
-            <label className="text-xs text-gray-400 mb-2 block">카테고리</label>
-            <CategoryPicker
-              categories={categories}
-              selectedId={categoryId}
-              onSelect={setCategoryId}
-            />
-          </div>
-        )}
-
-        <div className="flex gap-2 pt-1">
-          {existingEvent && !isReadOnly && (
-            <button
-              onClick={handleDelete}
-              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-red-500 bg-red-50 active:bg-red-100"
-            >
-              삭제
+        <div className="px-5 pt-2 pb-6 space-y-4" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-base text-gray-900">
+              {existingEvent ? (isReadOnly ? 'Google 일정' : '일정 수정') : '새 일정'}
+            </h2>
+            <button onClick={closeModal} className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 text-sm font-bold">
+              ✕
             </button>
-          )}
+          </div>
+
+          {/* Title input */}
+          <div className="relative">
+            <input
+              ref={inputRef}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !isReadOnly && handleSave()}
+              placeholder="일정 이름 입력"
+              disabled={!!isReadOnly}
+              className="w-full text-[17px] font-semibold text-gray-900 placeholder-gray-300 outline-none pb-2 border-b-2 transition-colors"
+              style={{ borderColor: title ? accentColor : '#E5E7EB' }}
+            />
+          </div>
+
+          {/* Time pickers */}
+          <div className="flex gap-2 items-center">
+            <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2">
+              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">시작</label>
+              <input
+                type="time"
+                value={startStr}
+                onChange={(e) => setStartStr(e.target.value)}
+                disabled={!!isReadOnly}
+                className="w-full text-sm font-semibold text-gray-800 bg-transparent outline-none mt-0.5"
+              />
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round">
+              <path d="M5 12h14m-7-7 7 7-7 7"/>
+            </svg>
+            <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2">
+              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">종료</label>
+              <input
+                type="time"
+                value={endStr}
+                onChange={(e) => setEndStr(e.target.value)}
+                disabled={!!isReadOnly}
+                className="w-full text-sm font-semibold text-gray-800 bg-transparent outline-none mt-0.5"
+              />
+            </div>
+          </div>
+
+          {/* Category picker */}
           {!isReadOnly && (
-            <button
-              onClick={handleSave}
-              disabled={!title.trim()}
-              className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-500 active:bg-blue-600 disabled:opacity-40"
-            >
-              {existingEvent ? '저장' : '추가'}
-            </button>
+            <div>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">카테고리</p>
+              <CategoryPicker
+                categories={categories}
+                selectedId={categoryId}
+                onSelect={setCategoryId}
+              />
+            </div>
           )}
-          {isReadOnly && (
-            <button
-              onClick={closeModal}
-              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-500 bg-gray-100"
-            >
-              닫기
-            </button>
-          )}
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            {existingEvent && !isReadOnly && (
+              <button
+                onClick={handleDelete}
+                className={`flex-none py-3 px-4 rounded-2xl text-sm font-semibold transition-colors ${
+                  showDeleteConfirm
+                    ? 'bg-red-500 text-white'
+                    : 'bg-red-50 text-red-500 active:bg-red-100'
+                }`}
+              >
+                {showDeleteConfirm ? '확인 삭제' : '삭제'}
+              </button>
+            )}
+            {!isReadOnly ? (
+              <button
+                onClick={handleSave}
+                disabled={!title.trim()}
+                className="flex-1 py-3 rounded-2xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-40"
+                style={{ backgroundColor: accentColor }}
+              >
+                {existingEvent ? '저장' : '추가하기'}
+              </button>
+            ) : (
+              <button
+                onClick={closeModal}
+                className="flex-1 py-3 rounded-2xl text-sm font-medium text-gray-500 bg-gray-100"
+              >
+                닫기
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
-

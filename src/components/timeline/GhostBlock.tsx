@@ -8,17 +8,16 @@ interface Props {
 
 export function GhostBlock({ drag, color }: Props) {
   const top = minuteToPixel(drag.startMinute)
-  const height = minuteToPixel(drag.endMinute) - minuteToPixel(drag.startMinute)
+  const height = Math.max(minuteToPixel(drag.endMinute) - top, 18)
 
   return (
     <div
-      className="absolute left-0 right-1 rounded pointer-events-none z-10"
-      style={{ top, height, backgroundColor: color, opacity: 0.5 }}
+      className="absolute left-0 right-1 rounded-lg pointer-events-none z-10 flex items-start"
+      style={{ top, height, backgroundColor: color, opacity: 0.6 }}
     >
-      <span className="text-white text-xs font-medium px-1.5 py-0.5 block truncate">
+      <span className="text-white text-[11px] font-semibold px-2 pt-1">
         {formatMinute(drag.startMinute)} – {formatMinute(drag.endMinute)}
       </span>
     </div>
   )
 }
-
