@@ -2,7 +2,24 @@ import { useState } from 'react'
 import { useGoogleLogin, googleLogout } from '@react-oauth/google'
 import { useAppStore } from '../../store/useAppStore'
 
+const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined
+
+// Outer shell: only renders the connected component when clientId exists.
+// useGoogleLogin() must be inside GoogleOAuthProvider — splitting avoids
+// calling the hook when no provider is in the tree.
 export function GoogleCalendarSection() {
+  if (!clientId) {
+    return (
+      <p className="text-xs text-gray-400 leading-relaxed">
+        Google Calendar 연동을 위해<br />
+        <code className="bg-gray-100 px-1 rounded">VITE_GOOGLE_CLIENT_ID</code>를 설정하세요.
+      </p>
+    )
+  }
+  return <GoogleCalendarConnected />
+}
+
+function GoogleCalendarConnected() {
   const token = useAppStore((s) => s.googleAccessToken)
   const lastSyncedAt = useAppStore((s) => s.lastSyncedAt)
   const setGoogleAccessToken = useAppStore((s) => s.setGoogleAccessToken)
@@ -16,7 +33,6 @@ export function GoogleCalendarSection() {
     onSuccess: (res) => {
       setError(null)
       setLoading(false)
-      // 토큰을 저장하면 useGoogleAutoSync가 자동으로 동기화 실행
       setGoogleAccessToken(res.access_token)
     },
     onError: () => {
@@ -29,21 +45,9 @@ export function GoogleCalendarSection() {
     googleLogout()
     setGoogleAccessToken(null)
     setLastSyncedAt(null)
-    // 연결된 구글 이벤트도 제거
     const { events } = useAppStore.getState()
     const googleDates = [...new Set(events.filter((e) => e.isGoogleEvent).map((e) => e.date))]
     googleDates.forEach(clearGoogleEvents)
-  }
-
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-
-  if (!clientId) {
-    return (
-      <p className="text-xs text-gray-400 leading-relaxed">
-        Google Calendar 연동을 위해<br />
-        <code className="bg-gray-100 px-1 rounded">VITE_GOOGLE_CLIENT_ID</code>를 설정하세요.
-      </p>
-    )
   }
 
   if (!token) {
@@ -64,7 +68,6 @@ export function GoogleCalendarSection() {
 
   return (
     <div className="space-y-2">
-      {/* 연결 상태 표시 */}
       <div className="flex items-center gap-2 py-2 px-3 bg-green-50 rounded-xl">
         <div className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
         <div className="flex-1 min-w-0">
@@ -75,7 +78,6 @@ export function GoogleCalendarSection() {
         </div>
         <GoogleIcon />
       </div>
-
       <button
         onClick={disconnect}
         className="w-full py-2 rounded-xl text-xs font-semibold text-gray-400 active:bg-gray-50 transition-colors"
