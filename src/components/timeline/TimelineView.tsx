@@ -1,12 +1,11 @@
-import { createContext, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { TimeAxis } from './TimeAxis'
 import { EventGrid } from './EventGrid'
+import { ScrollContainerContext } from './scrollContext'
 import { minuteToPixel } from '../../utils/time'
 import { useCurrentTime } from '../../hooks/useCurrentTime'
 
-export const ScrollContainerContext = createContext<React.RefObject<HTMLDivElement | null>>(
-  { current: null }
-)
+export { ScrollContainerContext }
 
 interface Props {
   date: string
