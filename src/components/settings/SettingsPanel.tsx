@@ -1,4 +1,5 @@
 import { useAppStore } from '../../store/useAppStore'
+import { useAuthStore } from '../../store/useAuthStore'
 import { CategoryEditor } from './CategoryEditor'
 import { GoogleCalendarSection } from './GoogleCalendarSection'
 
@@ -11,6 +12,8 @@ export function SettingsPanel({ open, onClose }: Props) {
   const categories = useAppStore((s) => s.categories)
   const updateCategory = useAppStore((s) => s.updateCategory)
   const resetCategories = useAppStore((s) => s.resetCategories)
+  const lock = useAuthStore((s) => s.lock)
+  const pinEnabled = !!import.meta.env.VITE_PIN_HASH
 
   return (
     <>
@@ -40,6 +43,25 @@ export function SettingsPanel({ open, onClose }: Props) {
             </h3>
             <GoogleCalendarSection />
           </section>
+
+          <div className="h-px bg-gray-100" />
+
+          {pinEnabled && (
+            <section>
+              <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">보안</h3>
+              <button
+                onClick={() => { onClose(); setTimeout(lock, 300) }}
+                className="w-full flex items-center gap-3 py-3 px-3 rounded-xl bg-gray-50 active:bg-gray-100 text-left"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <span className="text-sm font-semibold text-gray-700">앱 잠금</span>
+                <span className="ml-auto text-xs text-gray-400">PIN 입력 화면으로</span>
+              </button>
+            </section>
+          )}
 
           <div className="h-px bg-gray-100" />
 
